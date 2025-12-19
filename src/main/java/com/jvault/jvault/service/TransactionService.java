@@ -9,6 +9,7 @@ import com.jvault.jvault.model.emus.TransactionStatus;
 import com.jvault.jvault.model.emus.TransactionType;
 import com.jvault.jvault.repo.AccountRepo;
 import com.jvault.jvault.repo.TransactionRepo;
+import com.jvault.jvault.utils.exception.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,22 +26,22 @@ public class TransactionService {
     @Transactional
     public Transaction transferMoney(TransferRequest request, String userEmail){
         Account source = accountRepo.findById(request.getSourceAccountId())
-                .orElseThrow(() -> new RuntimeException("Source account not found"));
+                .orElseThrow(() -> new AccountNotFoundException("Source account not found"));
 
         if(!source.getUser().getEmail().equals(userEmail))
-            throw new RuntimeException("You do not own this source account!");
+            throw new NotYourAccountException("You do not own this source account!");
 
         if(source.getBalance().compareTo(request.getAmount()) <0)
-            throw new RuntimeException("Source account does not have enough money!");
+            throw new NotEnoughMoneyException("Source account does not have enough money!");
 
         Account destination = accountRepo.findByIban(request.getDestinationIban())
-                .orElseThrow(() -> new RuntimeException("Destination not found"));
+                .orElseThrow(() -> new AccountNotFoundException("Destination not found"));
 
         if(source.getId().equals(destination.getId()))
-            throw new RuntimeException("Cannot transfer money to the same account!");
+            throw new CantTransferMoneyToSameAccount("Cannot transfer money to the same account!");
 
         if(!source.getCurrency().equals(destination.getCurrency()))
-            throw new RuntimeException("Cross-currency transfer not supported yet");
+            throw new NotSupportedYetException("Cross-currency transfer not supported yet");
 
         source.setBalance(source.getBalance().subtract(request.getAmount()));
         destination.setBalance(destination.getBalance().add(request.getAmount()));
@@ -64,9 +65,9 @@ public class TransactionService {
 
     public List<Transaction> getTransactionHistory(Long accountId, String userEmail) {
         Account account = accountRepo.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
         if(!account.getUser().getEmail().equals(userEmail))
-            throw new RuntimeException("Access denied");
+            throw new NotYourAccountException("Access denied");
 
         return transactionRepo.findBySourceAccountOrDestinationAccountOrderByTimestampDesc(account, account);
     }
@@ -74,7 +75,7 @@ public class TransactionService {
     @Transactional
     public Transaction deposit(DepositRequest request){
         Account targetAccount = accountRepo.findByIban(request.getTargetIban())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
 
         targetAccount.setBalance(targetAccount.getBalance().add(request.getAmount()));
         accountRepo.save(targetAccount);
@@ -94,13 +95,13 @@ public class TransactionService {
     @Transactional
     public Transaction withdrawal(WithdrawalRequest request, String userEmail){
         Account sourceAccount = accountRepo.findByIban(request.getSourceIban())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
 
         if(!sourceAccount.getUser().getEmail().equals(userEmail))
-            throw new RuntimeException("You cannot withdraw money from an account you don't own!");
+            throw new NotYourAccountException("You cannot withdraw money from an account you don't own!");
 
         if(sourceAccount.getBalance().compareTo(request.getAmount()) < 0)
-            throw new RuntimeException("Insufficient amount of money in this account!");
+            throw new NotEnoughMoneyException("Insufficient amount of money in this account!");
 
         sourceAccount.setBalance(sourceAccount.getBalance().subtract(request.getAmount()));
         accountRepo.save(sourceAccount);

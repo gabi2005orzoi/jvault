@@ -7,6 +7,9 @@ import com.jvault.jvault.model.User;
 import com.jvault.jvault.model.emus.Currency;
 import com.jvault.jvault.repo.AccountRepo;
 import com.jvault.jvault.repo.UserRepo;
+import com.jvault.jvault.utils.exception.AccountNotFoundException;
+import com.jvault.jvault.utils.exception.InvalidCurrencyException;
+import com.jvault.jvault.utils.exception.NotYourAccountException;
 import com.jvault.jvault.utils.exception.UserNotFound;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +41,7 @@ public class AccountService {
             return mapToResponse(accountRepo.save(account));
         }
         catch (IllegalArgumentException e){
-            throw new RuntimeException("Invalid currency! Allowed: RON, EUR, USD");
+            throw new InvalidCurrencyException("Invalid currency! Allowed: RON, EUR, USD");
         }
     }
 
@@ -65,9 +68,9 @@ public class AccountService {
 
     public AccountResponse getAccountById(Long id, String email){
         Account account = accountRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
         if(!account.getUser().getEmail().equals(email)){
-            throw new RuntimeException("Account does not belong to you");
+            throw new NotYourAccountException("Account does not belong to you");
         }
         return mapToResponse(account);
     }
