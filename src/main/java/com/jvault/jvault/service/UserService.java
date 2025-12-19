@@ -4,15 +4,19 @@ import com.jvault.jvault.dto.*;
 import com.jvault.jvault.model.User;
 import com.jvault.jvault.repo.UserRepo;
 import com.jvault.jvault.service.mapper.UserMapper;
+import com.jvault.jvault.utils.IpUtils;
 import com.jvault.jvault.utils.exception.InvalidPasswordDeleteException;
 import com.jvault.jvault.utils.exception.OldPasswordIncorrect;
 import com.jvault.jvault.utils.exception.UserAlreadyExistsException;
 import com.jvault.jvault.utils.exception.UserNotFound;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 
 import java.util.List;
@@ -42,9 +46,10 @@ public class UserService{
                 user.getEmail(),
                 "USER_UPDATED",
                 details,
-                null
+                IpUtils.getCurrentIp()
         );
     }
+
 
     private boolean correctPassword(String rawPassword, String storedHash){
         return passwordEncoder.matches(rawPassword, storedHash);
@@ -61,7 +66,7 @@ public class UserService{
                 request.getEmail(),
                 "USER_REGISTERED",
                 "User registered successfully",
-                null
+                IpUtils.getCurrentIp()
         );
         return mapper.fromUser(user);
     }
@@ -85,7 +90,7 @@ public class UserService{
                 user.getEmail(),
                 "PASSWORD_CHANGED",
                 "Password changed successfully",
-                null
+                IpUtils.getCurrentIp()
         );
         return mapper.fromUser(user);
     }
@@ -113,7 +118,7 @@ public class UserService{
                     request.getEmail(),
                     "USER_DELETED",
                     "User deleted successfully",
-                    null
+                    IpUtils.getCurrentIp()
                     );
             userRepo.delete(user);
         } else {

@@ -7,13 +7,17 @@ import com.jvault.jvault.model.User;
 import com.jvault.jvault.model.emus.Currency;
 import com.jvault.jvault.repo.AccountRepo;
 import com.jvault.jvault.repo.UserRepo;
+import com.jvault.jvault.utils.IpUtils;
 import com.jvault.jvault.utils.exception.AccountNotFoundException;
 import com.jvault.jvault.utils.exception.InvalidCurrencyException;
 import com.jvault.jvault.utils.exception.NotYourAccountException;
 import com.jvault.jvault.utils.exception.UserNotFound;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -43,7 +47,7 @@ public class AccountService {
                     userEmail,
                     "ACCOUNT_CREATED",
                     "New account created via API. IBAN: " + account.getIban() + ", Currency: " + account.getCurrency(),
-                    null
+                    IpUtils.getCurrentIp()
             );
             return mapToResponse(accountRepo.save(account));
         }

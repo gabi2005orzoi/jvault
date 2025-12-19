@@ -6,6 +6,8 @@ import com.jvault.jvault.service.AuditLogService;
 import com.jvault.jvault.service.JwtService;
 import com.jvault.jvault.service.RefreshTokenService;
 import com.jvault.jvault.service.UserService;
+import com.jvault.jvault.utils.IpUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -38,18 +40,23 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> authenticateAndGetToken(@RequestBody AuthRequest authRequest){
+    public ResponseEntity<JwtResponse> authenticateAndGetToken(
+            @RequestBody AuthRequest authRequest,
+            HttpServletRequest request
+    ){
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
         );
         if(authentication.isAuthenticated()){
             String accessToken = jwtService.generateToken(authRequest.getUsername());
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(authRequest.getUsername());
+
+            String ipAddress = IpUtils.getIpClient(request);
             auditLogService.logAction(
                     authRequest.getUsername(),
                     "LOGIN_SUCCESS",
                     "User logged in successfully",
-                    null
+                    ipAddress
             );
             return ResponseEntity.ok(JwtResponse.builder()
                     .accessToken(accessToken)
