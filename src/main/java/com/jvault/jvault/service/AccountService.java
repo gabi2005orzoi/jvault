@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 public class AccountService {
     private final AccountRepo accountRepo;
     private final UserRepo userRepo;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public AccountResponse createAccount(CreateAccountRequest request, String userEmail){
@@ -38,6 +39,12 @@ public class AccountService {
                     .currency(currencyEnum)
                     .balance(BigDecimal.ZERO)
                     .build();
+            auditLogService.logAction(
+                    userEmail,
+                    "ACCOUNT_CREATED",
+                    "New account created via API. IBAN: " + account.getIban() + ", Currency: " + account.getCurrency(),
+                    null
+            );
             return mapToResponse(accountRepo.save(account));
         }
         catch (IllegalArgumentException e){

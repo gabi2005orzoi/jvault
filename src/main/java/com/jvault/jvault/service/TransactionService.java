@@ -28,20 +28,15 @@ public class TransactionService {
         Account source = accountRepo.findById(request.getSourceAccountId())
                 .orElseThrow(() -> new AccountNotFoundException("Source account not found"));
 
-        if(!source.getUser().getEmail().equals(userEmail))
-            throw new NotYourAccountException("You do not own this source account!");
-
-        if(source.getBalance().compareTo(request.getAmount()) <0)
-            throw new NotEnoughMoneyException("Source account does not have enough money!");
-
         Account destination = accountRepo.findByIban(request.getDestinationIban())
                 .orElseThrow(() -> new AccountNotFoundException("Destination not found"));
 
-        if(source.getId().equals(destination.getId()))
-            throw new CantTransferMoneyToSameAccount("Cannot transfer money to the same account!");
-
-        if(!source.getCurrency().equals(destination.getCurrency()))
-            throw new NotSupportedYetException("Cross-currency transfer not supported yet");
+        try{
+            validateTransfer(source, destination, request, userEmail);
+        } catch (RuntimeException e){
+            saveFailedTransaction(source, destination, request, e.getMessage());
+            throw  e;
+        }
 
         source.setBalance(source.getBalance().subtract(request.getAmount()));
         destination.setBalance(destination.getBalance().add(request.getAmount()));
@@ -61,6 +56,33 @@ public class TransactionService {
                 .build();
 
         return transactionRepo.save(transaction);
+    }
+
+    private void validateTransfer(Account source, Account destination, TransferRequest request, String userEmail){
+        if(!source.getUser().getEmail().equals(userEmail))
+            throw new NotYourAccountException("You do not own this source account!");
+        if(source.getBalance().compareTo(request.getAmount()) < 0)
+            throw new NotEnoughMoneyException("Source account does not have enough money!");
+        if(source.getId().equals(destination.getId()))
+            throw new CantTransferMoneyToSameAccount("Cannot transfer money to the same account!");
+        if(!source.getCurrency().equals(destination.getCurrency()))
+            throw new NotSupportedYetException("Cross-currency transfer not supported yet!");
+    }
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    public void saveFailedTransaction(Account source, Account destination, TransferRequest request, String reason) {
+        Transaction transaction = Transaction.builder()
+                .sourceAccount(source)
+                .destinationAccount(destination)
+                .amount(request.getAmount())
+                .currency(source.getCurrency())
+                .timestamp(LocalDateTime.now())
+                .status(TransactionStatus.FAILED)
+                .type(TransactionType.TRANSFER)
+                .description("FAILED: " + reason)
+                .build();
+        transactionRepo.save(transaction);
+
     }
 
     public List<Transaction> getTransactionHistory(Long accountId, String userEmail) {

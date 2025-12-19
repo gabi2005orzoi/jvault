@@ -35,7 +35,7 @@ public class AuditLog {
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
-    public AuditLog(Long id, String username, String action, String details, String ipAddress) {
+    public AuditLog(String username, String action, String details, String ipAddress) {
         this.username = username;
         this.action = action;
         this.details = details;

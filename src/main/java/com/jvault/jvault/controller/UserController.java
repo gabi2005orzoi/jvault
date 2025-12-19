@@ -2,6 +2,7 @@ package com.jvault.jvault.controller;
 
 import com.jvault.jvault.dto.*;
 import com.jvault.jvault.model.RefreshToken;
+import com.jvault.jvault.service.AuditLogService;
 import com.jvault.jvault.service.JwtService;
 import com.jvault.jvault.service.RefreshTokenService;
 import com.jvault.jvault.service.UserService;
@@ -28,6 +29,7 @@ public class UserController {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final AuthenticationManager authenticationManager;
+    private final AuditLogService auditLogService;
 
     private boolean isOwnerOrAdmin(String resourceOwnerEmail, Authentication authentication){
         String currentUsername = authentication.getName();
@@ -43,6 +45,12 @@ public class UserController {
         if(authentication.isAuthenticated()){
             String accessToken = jwtService.generateToken(authRequest.getUsername());
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(authRequest.getUsername());
+            auditLogService.logAction(
+                    authRequest.getUsername(),
+                    "LOGIN_SUCCESS",
+                    "User logged in successfully",
+                    null
+            );
             return ResponseEntity.ok(JwtResponse.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken.getToken())

@@ -25,12 +25,25 @@ public class UserService{
     private final UserRepo userRepo;
     private final UserMapper mapper;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
     private void mergeUser(User user, UpdateUserRequest request) {
-        if(StringUtils.isNotBlank(request.getAddress()))
+        String details = "User ";
+        if(StringUtils.isNotBlank(request.getAddress())) {
             user.setAddress(request.getAddress());
-        if(StringUtils.isNotBlank(request.getPhoneNumber()))
+            details += "address ";
+        }
+        if(StringUtils.isNotBlank(request.getPhoneNumber())) {
             user.setPhoneNumber(request.getPhoneNumber());
+            details += "phone number ";
+        }
+        details += "updated";
+        auditLogService.logAction(
+                user.getEmail(),
+                "USER_UPDATED",
+                details,
+                null
+        );
     }
 
     private boolean correctPassword(String rawPassword, String storedHash){
@@ -44,6 +57,12 @@ public class UserService{
         }
         User user = mapper.toUser(request);
         userRepo.save(user);
+        auditLogService.logAction(
+                request.getEmail(),
+                "USER_REGISTERED",
+                "User registered successfully",
+                null
+        );
         return mapper.fromUser(user);
     }
 
@@ -62,6 +81,12 @@ public class UserService{
             throw new OldPasswordIncorrect("Incorrect password!");
         }
         userRepo.save(user);
+        auditLogService.logAction(
+                user.getEmail(),
+                "PASSWORD_CHANGED",
+                "Password changed successfully",
+                null
+        );
         return mapper.fromUser(user);
     }
 
@@ -84,6 +109,12 @@ public class UserService{
     public void deleteUser(DeleteUserRequest request){
         User user = userRepo.findByEmail(request.getEmail()).orElseThrow(UserNotFound::new);
         if(correctPassword(request.getPassword(), user.getPassword())) {
+            auditLogService.logAction(
+                    request.getEmail(),
+                    "USER_DELETED",
+                    "User deleted successfully",
+                    null
+                    );
             userRepo.delete(user);
         } else {
             throw new InvalidPasswordDeleteException("Password incorrect!");
