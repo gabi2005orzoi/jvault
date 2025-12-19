@@ -12,6 +12,7 @@ import com.jvault.jvault.repo.TransactionRepo;
 import com.jvault.jvault.utils.exception.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,9 @@ import java.util.List;
 public class TransactionService {
     private final TransactionRepo transactionRepo;
     private final AccountRepo accountRepo;
+
+    @Lazy
+    private TransactionService self;
 
     @Transactional
     public Transaction transferMoney(TransferRequest request, String userEmail){
@@ -34,7 +38,7 @@ public class TransactionService {
         try{
             validateTransfer(source, destination, request, userEmail);
         } catch (RuntimeException e){
-            saveFailedTransaction(source, destination, request, e.getMessage());
+            self.saveFailedTransaction(source, destination, request, e.getMessage());
             throw  e;
         }
 

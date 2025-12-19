@@ -3,6 +3,7 @@ package com.jvault.jvault.handler;
 import com.jvault.jvault.utils.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -152,5 +153,17 @@ public class GlobalExceptionHandler {
         exp.getBindingResult().getFieldErrors()
                 .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
         return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLocking(ObjectOptimisticLockingFailureException exp){
+        ErrorResponse error = new ErrorResponse(
+                "The account was updated by another transaction. Please refresh and try again.",
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value()
+        );
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(error);
     }
 }
