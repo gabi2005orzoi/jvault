@@ -6,83 +6,140 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.LocalDateTime;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserNotFound.class)
-    public ResponseEntity<String> handle(UserNotFound exp){
+    public ResponseEntity<ErrorResponse> handle(UserNotFound exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<String> handle(UserAlreadyExistsException exp){
+    public ResponseEntity<ErrorResponse> handle(UserAlreadyExistsException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(AccountNotFoundException.class)
-    public ResponseEntity<String> handle(AccountNotFoundException exp){
+    public ResponseEntity<ErrorResponse> handle(AccountNotFoundException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(InvalidCurrencyException.class)
-    public ResponseEntity<String> handle(InvalidCurrencyException exp){
+    public ResponseEntity<ErrorResponse> handle(InvalidCurrencyException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(NotYourAccountException.class)
-    public ResponseEntity<String> handle(NotYourAccountException exp){
+    public ResponseEntity<ErrorResponse> handle(NotYourAccountException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(RefreshTokenExpiredException.class)
-    public ResponseEntity<String> handle(RefreshTokenExpiredException exp){
+    public ResponseEntity<ErrorResponse> handle(RefreshTokenExpiredException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(OldPasswordIncorrect.class)
-    public ResponseEntity<String> handle(OldPasswordIncorrect exp){
+    public ResponseEntity<ErrorResponse> handle(OldPasswordIncorrect exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(InvalidPasswordDeleteException.class)
-    public ResponseEntity<String> handle(InvalidPasswordDeleteException exp){
+    public ResponseEntity<ErrorResponse> handle(InvalidPasswordDeleteException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(CantTransferMoneyToSameAccount.class)
-    public ResponseEntity<String> handle(CantTransferMoneyToSameAccount exp){
+    public ResponseEntity<ErrorResponse> handle(CantTransferMoneyToSameAccount exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(NotEnoughMoneyException.class)
-    public ResponseEntity<String> handle(NotEnoughMoneyException exp){
+    public ResponseEntity<ErrorResponse> handle(NotEnoughMoneyException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_CONTENT)
-                .body(exp.getMessage());
+                .body(error);
     }
 
     @ExceptionHandler(NotSupportedYetException.class)
-    public ResponseEntity<String> handle(NotSupportedYetException exp){
+    public ResponseEntity<ErrorResponse> handle(NotSupportedYetException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()
+        );
         return ResponseEntity
                 .status(HttpStatus.NOT_IMPLEMENTED)
-                .body(exp.getMessage());
+                .body(error);
     }
 }
