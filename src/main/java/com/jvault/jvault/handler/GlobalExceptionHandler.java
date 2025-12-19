@@ -50,4 +50,39 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(exp.getMessage());
     }
+
+    @ExceptionHandler(OldPasswordIncorrect.class)
+    public ResponseEntity<String> handle(OldPasswordIncorrect exp){
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(exp.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPasswordDeleteException.class)
+    public ResponseEntity<String> handle(InvalidPasswordDeleteException exp){
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(exp.getMessage());
+    }
+
+    @ExceptionHandler(CantTransferMoneyToSameAccount.class)
+    public ResponseEntity<String> handle(CantTransferMoneyToSameAccount exp){
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(exp.getMessage());
+    }
+
+    @ExceptionHandler(NotEnoughMoneyException.class)
+    public ResponseEntity<String> handle(NotEnoughMoneyException exp){
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_CONTENT)
+                .body(exp.getMessage());
+    }
+
+    @ExceptionHandler(NotSupportedYetException.class)
+    public ResponseEntity<String> handle(NotSupportedYetException exp){
+        return ResponseEntity
+                .status(HttpStatus.NOT_IMPLEMENTED)
+                .body(exp.getMessage());
+    }
 }

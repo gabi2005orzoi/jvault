@@ -4,12 +4,10 @@ import com.jvault.jvault.dto.*;
 import com.jvault.jvault.model.User;
 import com.jvault.jvault.repo.UserRepo;
 import com.jvault.jvault.service.mapper.UserMapper;
-import com.jvault.jvault.utils.exception.SomethingWentWrong;
+import com.jvault.jvault.utils.exception.InvalidPasswordDeleteException;
+import com.jvault.jvault.utils.exception.OldPasswordIncorrect;
 import com.jvault.jvault.utils.exception.UserAlreadyExistsException;
 import com.jvault.jvault.utils.exception.UserNotFound;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -61,7 +59,7 @@ public class UserService{
     public UserResponse changePassword(ChangePasswordRequest request){
         User user = userRepo.findByEmail(request.getEmail()).orElseThrow(UserNotFound::new);
         if(!correctPassword(request.getOldPassword(), user.getPassword())){
-            throw new SomethingWentWrong();
+            throw new OldPasswordIncorrect("Incorrect password!");
         }
         userRepo.save(user);
         return mapper.fromUser(user);
@@ -88,7 +86,7 @@ public class UserService{
         if(correctPassword(request.getPassword(), user.getPassword())) {
             userRepo.delete(user);
         } else {
-            throw new SomethingWentWrong();
+            throw new InvalidPasswordDeleteException("Password incorrect!");
         }
     }
 }
