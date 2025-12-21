@@ -20,7 +20,7 @@ public class AuditLog {
 
     // who did the action
     @Column(nullable = false)
-    private String email;
+    private String username;
 
     // what he did
     @Column(nullable = false)
@@ -35,8 +35,8 @@ public class AuditLog {
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
-    public AuditLog(String email, String action, String details, String ipAddress) {
-        this.email = email;
+    public AuditLog(String username, String action, String details, String ipAddress) {
+        this.username = username;
         this.action = action;
         this.details = details;
         this.ipAddress = ipAddress;

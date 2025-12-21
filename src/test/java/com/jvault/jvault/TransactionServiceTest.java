@@ -20,6 +20,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springdoc.core.converters.models.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -284,16 +287,24 @@ class TransactionServiceTest {
     void getTransactionHistory_Success() {
         // Arrange
         when(accountRepo.findById(1L)).thenReturn(Optional.of(account1));
-        Transaction tx = Transaction.builder().id(100L).build();
-        when(transactionRepo.findBySourceAccountOrDestinationAccountOrderByTimestampDesc(account1, account1))
-                .thenReturn(Collections.singletonList(tx));
 
-        // Act
-        List<Transaction> result = transactionService.getTransactionHistory(1L, "user1@test.com");
+        Transaction tx = Transaction.builder().id(100L).build();
+        // Creăm o pagină simulată care conține lista noastră
+        Page<Transaction> pageResult = new PageImpl<>(Collections.singletonList(tx));
+
+        // Mockuim repository-ul să returneze pagina când primește ORICE Pageable
+        when(transactionRepo.findBySourceAccountOrDestinationAccount(
+                eq(account1),
+                eq(account1),
+                (org.springframework.data.domain.Pageable) any(Pageable.class))
+        ).thenReturn(pageResult);
+
+        // Act - Apelăm cu pagina 0 și mărimea 10
+        Page<Transaction> result = transactionService.getTransactionHistory(1L, "user1@test.com", 0, 10);
 
         // Assert
-        assertEquals(1, result.size());
-        assertEquals(100L, result.get(0).getId());
+        assertEquals(1, result.getTotalElements()); // Verificăm totalul
+        assertEquals(100L, result.getContent().get(0).getId()); // Verificăm conținutul
     }
 
     @Test
@@ -304,7 +315,7 @@ class TransactionServiceTest {
 
         // Act & Assert
         assertThrows(NotYourAccountException.class, () ->
-                transactionService.getTransactionHistory(1L, "user2@test.com")
+                transactionService.getTransactionHistory(1L, "user2@test.com", 0, 10)
         );
     }
 }

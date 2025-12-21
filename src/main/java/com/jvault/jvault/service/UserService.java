@@ -9,14 +9,11 @@ import com.jvault.jvault.utils.exception.InvalidPasswordDeleteException;
 import com.jvault.jvault.utils.exception.OldPasswordIncorrect;
 import com.jvault.jvault.utils.exception.UserAlreadyExistsException;
 import com.jvault.jvault.utils.exception.UserNotFound;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 
 import java.util.List;

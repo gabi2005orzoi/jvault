@@ -12,11 +12,15 @@ import com.jvault.jvault.repo.TransactionRepo;
 import com.jvault.jvault.utils.exception.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,7 @@ public class TransactionService {
     private final AccountRepo accountRepo;
 
     @Lazy
+    @Autowired
     private TransactionService self;
 
     @Transactional
@@ -89,13 +94,15 @@ public class TransactionService {
 
     }
 
-    public List<Transaction> getTransactionHistory(Long accountId, String userEmail) {
+    public Page<Transaction> getTransactionHistory(Long accountId, String userEmail, int page, int size) {
         Account account = accountRepo.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found"));
         if(!account.getUser().getEmail().equals(userEmail))
             throw new NotYourAccountException("Access denied");
 
-        return transactionRepo.findBySourceAccountOrDestinationAccountOrderByTimestampDesc(account, account);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+
+        return transactionRepo.findBySourceAccountOrDestinationAccount(account, account, pageable);
     }
 
     @Transactional

@@ -12,15 +12,13 @@ import com.jvault.jvault.utils.exception.AccountNotFoundException;
 import com.jvault.jvault.utils.exception.InvalidCurrencyException;
 import com.jvault.jvault.utils.exception.NotYourAccountException;
 import com.jvault.jvault.utils.exception.UserNotFound;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -57,7 +55,30 @@ public class AccountService {
     }
 
     private String generateUniqueIban(){
-        return "RO" + UUID.randomUUID().toString().replaceAll("-", " ").substring(0,20).toUpperCase();
+        String countryCode = "RO";
+        String bankCode = "JVLT";
+
+        String accountId = generateRandomDigits();
+
+        String checkDigits = calculateCheckDigits(countryCode, bankCode, accountId);
+
+        return countryCode + checkDigits + bankCode + accountId;
+    }
+
+    private String calculateCheckDigits(String countryCode, String bankCode, String accountId) {
+        String temp = bankCode + accountId + countryCode + "00";
+        StringBuilder sb = new StringBuilder();
+        for(char ch: temp.toCharArray()){
+            
+        }
+    }
+
+    private String generateRandomDigits() {
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(16);
+        for(int i=0; i<16; i++)
+            sb.append(random.nextInt(10));
+        return sb.toString();
     }
 
     private AccountResponse mapToResponse(Account account){

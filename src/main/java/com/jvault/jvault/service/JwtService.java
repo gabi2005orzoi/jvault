@@ -19,7 +19,7 @@ import java.util.function.Function;
 public class JwtService {
 
     @Value("${application.security.jwt.secret}")
-    public static final String SECRET = "5367566859703373367639792F423F452848284D6251655468576D5A71347437";
+    public String secretKey;
 
     public String generateToken(String email){
         Map<String, Object> claims = new HashMap<>();
@@ -37,7 +37,7 @@ public class JwtService {
     }
 
     private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 

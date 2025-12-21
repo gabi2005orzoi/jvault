@@ -1,6 +1,7 @@
 package com.jvault.jvault.service;
 
 import com.jvault.jvault.model.User;
+import jakarta.validation.constraints.NotNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
