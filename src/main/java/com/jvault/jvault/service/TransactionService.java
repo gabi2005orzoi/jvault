@@ -37,8 +37,8 @@
                     .type(transaction.getType())
                     .currency(transaction.getCurrency())
                     .description(transaction.getDescription())
-                    .sourceAccountIban(transaction.getSourceAccount().getIban())
-                    .destinationAccountIban(transaction.getDestinationAccount().getIban())
+                    .sourceAccountIban(transaction.getSourceAccount() != null ? transaction.getSourceAccount().getIban() : null)
+                    .destinationAccountIban(transaction.getDestinationAccount() != null ? transaction.getDestinationAccount().getIban() : null)
                     .build();
         }
 
