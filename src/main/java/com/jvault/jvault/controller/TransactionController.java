@@ -1,9 +1,9 @@
 package com.jvault.jvault.controller;
 
 import com.jvault.jvault.dto.DepositRequest;
+import com.jvault.jvault.dto.TransactionResponse;
 import com.jvault.jvault.dto.TransferRequest;
 import com.jvault.jvault.dto.WithdrawalRequest;
-import com.jvault.jvault.model.Transaction;
 import com.jvault.jvault.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,7 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @PostMapping("/transfer")
-    public ResponseEntity<Transaction> transferMoney(
+    public ResponseEntity<TransactionResponse> transferMoney(
             @RequestBody TransferRequest request,
             Authentication authentication
     ){
@@ -27,7 +27,7 @@ public class TransactionController {
     }
 
     @GetMapping("/history/{accountId}")
-    public ResponseEntity<Page<Transaction>> getHistory(
+    public ResponseEntity<Page<TransactionResponse>> getHistory(
             @PathVariable Long accountId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -37,14 +37,14 @@ public class TransactionController {
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<Transaction> deposit(
+    public ResponseEntity<TransactionResponse> deposit(
             @RequestBody DepositRequest depositRequest
     ){
         return ResponseEntity.ok(transactionService.deposit(depositRequest));
     }
 
     @PostMapping("/withdrawal")
-    public ResponseEntity<Transaction> withdrawal(
+    public ResponseEntity<TransactionResponse> withdrawal(
             @RequestBody WithdrawalRequest request,
             Authentication authentication
     ){

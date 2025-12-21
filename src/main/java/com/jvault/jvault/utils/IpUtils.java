@@ -7,11 +7,11 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class IpUtils {
     public static String getIpClient(HttpServletRequest request){
         String ipAddress = request.getHeader("X-Forwarded-For");
-        if(ipAddress == null || ipAddress.isEmpty() || "unknow".equalsIgnoreCase(ipAddress))
+        if(ipAddress == null || ipAddress.isEmpty() || ipAddress.equalsIgnoreCase("unknown"))
             ipAddress = request.getHeader("Proxy-Client-IP");
-        if(ipAddress == null || ipAddress.isEmpty() || "unknow".equalsIgnoreCase(ipAddress))
+        if(ipAddress == null || ipAddress.isEmpty() || ipAddress.equalsIgnoreCase("unknown"))
             ipAddress = request.getHeader("WL-Proxy-Client-IP");
-        if(ipAddress == null || ipAddress.isEmpty() || "unknow".equalsIgnoreCase(ipAddress))
+        if(ipAddress == null || ipAddress.isEmpty() || ipAddress.equalsIgnoreCase("unknown"))
             ipAddress = request.getRemoteAddr();
         if(ipAddress != null && ipAddress.contains(","))
             ipAddress = ipAddress.split(",")[0].trim();

@@ -17,9 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.Random;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +28,9 @@ public class AccountService {
     private final AccountRepo accountRepo;
     private final UserRepo userRepo;
     private final AuditLogService auditLogService;
+
+    private static final String COUNTRY_CODE = "RO";
+    private static final String BANK_CODE = "JVLT";
 
     @Transactional
     public AccountResponse createAccount(CreateAccountRequest request, String userEmail){
@@ -55,26 +58,35 @@ public class AccountService {
     }
 
     private String generateUniqueIban(){
-        String countryCode = "RO";
-        String bankCode = "JVLT";
 
         String accountId = generateRandomDigits();
 
-        String checkDigits = calculateCheckDigits(countryCode, bankCode, accountId);
+        String checkDigits = calculateCheckDigits(accountId);
 
-        return countryCode + checkDigits + bankCode + accountId;
+        return COUNTRY_CODE + checkDigits + BANK_CODE + accountId;
     }
 
-    private String calculateCheckDigits(String countryCode, String bankCode, String accountId) {
-        String temp = bankCode + accountId + countryCode + "00";
-        StringBuilder sb = new StringBuilder();
+    private String calculateCheckDigits(String accountId) {
+        String temp = BANK_CODE + accountId + COUNTRY_CODE + "00";
+        StringBuilder numericString = new StringBuilder();
         for(char ch: temp.toCharArray()){
-            
+            if(Character.isDigit(ch)){
+                numericString.append(ch);
+            } else {
+                numericString.append(Character.getNumericValue(ch));
+            }
         }
+
+        BigInteger bigInt = new BigInteger(numericString.toString());
+        int remainder = bigInt.mod(BigInteger.valueOf(97)).intValue();
+
+        int checkDigitValue = 98 - remainder;
+
+        return (checkDigitValue < 10 ? "0" : "") + checkDigitValue;
     }
 
     private String generateRandomDigits() {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         StringBuilder sb = new StringBuilder(16);
         for(int i=0; i<16; i++)
             sb.append(random.nextInt(10));
