@@ -1,9 +1,6 @@
 package com.jvault.jvault.controller;
 
-import com.jvault.jvault.dto.DepositRequest;
-import com.jvault.jvault.dto.TransactionResponse;
-import com.jvault.jvault.dto.TransferRequest;
-import com.jvault.jvault.dto.WithdrawalRequest;
+import com.jvault.jvault.dto.*;
 import com.jvault.jvault.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,5 +46,12 @@ public class TransactionController {
             Authentication authentication
     ){
         return  ResponseEntity.ok(transactionService.withdrawal(request, authentication.getName()));
+    }
+
+    @PostMapping("/card-payment")
+    public ResponseEntity<TransactionResponse> cardPayment(
+            @RequestBody CardTransferRequest request
+    ){
+        return ResponseEntity.ok(transactionService.cardTransaction(request));
     }
 }

@@ -1,25 +1,34 @@
     package com.jvault.jvault.service;
 
-    import com.jvault.jvault.dto.DepositRequest;
-    import com.jvault.jvault.dto.TransactionResponse;
-    import com.jvault.jvault.dto.TransferRequest;
-    import com.jvault.jvault.dto.WithdrawalRequest;
+    import com.jvault.jvault.dto.*;
     import com.jvault.jvault.model.Account;
+    import com.jvault.jvault.model.Card;
     import com.jvault.jvault.model.Transaction;
     import com.jvault.jvault.model.emus.TransactionStatus;
     import com.jvault.jvault.model.emus.TransactionType;
     import com.jvault.jvault.repo.AccountRepo;
+    import com.jvault.jvault.repo.CardRepo;
     import com.jvault.jvault.repo.TransactionRepo;
     import com.jvault.jvault.utils.exception.*;
+    import jakarta.annotation.PostConstruct;
     import jakarta.transaction.Transactional;
     import lombok.RequiredArgsConstructor;
+    import org.springframework.beans.factory.annotation.Value;
     import org.springframework.data.domain.Page;
     import org.springframework.data.domain.PageRequest;
     import org.springframework.data.domain.Pageable;
     import org.springframework.data.domain.Sort;
+    import org.springframework.scheduling.annotation.Scheduled;
     import org.springframework.stereotype.Service;
+    import org.springframework.web.reactive.function.client.WebClient;
 
+    import java.math.BigDecimal;
+    import java.math.RoundingMode;
+    import java.time.Duration;
+    import java.time.LocalDate;
     import java.time.LocalDateTime;
+    import java.util.Map;
+    import java.util.concurrent.ConcurrentHashMap;
 
     @Service
     @RequiredArgsConstructor
@@ -27,6 +36,14 @@
         private final TransactionRepo transactionRepo;
         private final AccountRepo accountRepo;
         private final AuditTransactionService auditTransactionService;
+        private final CardRepo cardRepo;
+
+        @Value("${application.security.exchange_rate.key}")
+        private String exrKey;
+        private final WebClient client = WebClient.builder()
+                .baseUrl("https://v6.exchangerate-api.com/v6/" + exrKey + "/latest/USD")
+                .build();
+        private final Map<String, BigDecimal> rates = new ConcurrentHashMap<>();
 
         private TransactionResponse mapToResponse(Transaction transaction){
             return TransactionResponse.builder()
@@ -58,7 +75,8 @@
             }
 
             source.setBalance(source.getBalance().subtract(request.getAmount()));
-            destination.setBalance(destination.getBalance().add(request.getAmount()));
+            BigDecimal convertedAmount = convert(request.getAmount(), source.getCurrency().name(), destination.getCurrency().name());
+            destination.setBalance(destination.getBalance().add(convertedAmount));
 
             accountRepo.save(source);
             accountRepo.save(destination);
@@ -84,8 +102,6 @@
                 throw new NotEnoughMoneyException("Source account does not have enough money!");
             if(source.getId().equals(destination.getId()))
                 throw new CantTransferMoneyToSameAccount("Cannot transfer money to the same account!");
-            if(!source.getCurrency().equals(destination.getCurrency()))
-                throw new NotSupportedYetException("Cross-currency transfer not supported yet!");
         }
 
         public Page<TransactionResponse> getTransactionHistory(Long accountId, String userEmail, int page, int size) {
@@ -146,5 +162,82 @@
                     .build();
 
             return mapToResponse(transactionRepo.save(transaction));
+        }
+
+        @Transactional
+        public TransactionResponse cardTransaction(CardTransferRequest request){
+            Card card = cardRepo.findByCardNumber(request.getCardNumber()).orElseThrow(() -> new CardException("Card not found!"));
+            if(!card.getCvv().equals(request.getCvv()))
+                throw new CardException("Invalid card data");
+            if(!card.isActive())
+                throw new CardException("Card blocked");
+            if(card.getExpirationDate().isBefore(LocalDate.now()))
+                throw new CardException("Card expired");
+            if(!card.getExpirationDate().equals(request.getExpirationDate()))
+                throw new CardException("Invalid card data");
+            if(request.getAmount().compareTo(BigDecimal.valueOf(0))<0)
+                throw new NegativeAmountException("Cannot transfer negative amounts of money!");
+            if(card.getAccount().getBalance().compareTo(request.getAmount())<0)
+                throw new NotEnoughMoneyException("Insufficient amount of money in this account!");
+
+            card.getAccount().setBalance(
+                    card.getAccount().getBalance().subtract(request.getAmount())
+            );
+            Account destination = null;
+
+            if(request.getIban() != null && request.getIban().contains("JVLT")){
+                destination = accountRepo.findByIban(request.getIban()).orElseThrow(() -> new AccountNotFoundException("Account not found"));
+                BigDecimal amountForDestination = convert(request.getAmount(), card.getAccount().getCurrency().name(), card.getAccount().getCurrency().name());
+                destination.setBalance(destination.getBalance().add(amountForDestination));
+            }
+
+            accountRepo.save(card.getAccount());
+            if(destination!=null)
+                accountRepo.save(destination);
+
+            Transaction transaction = Transaction.builder()
+                    .sourceAccount(card.getAccount())
+                    .destinationAccount(destination)
+                    .amount(request.getAmount())
+                    .currency(card.getAccount().getCurrency())
+                    .timestamp(LocalDateTime.now())
+                    .description("Card payment to: " + request.getIban())
+                    .status(TransactionStatus.SUCCESS)
+                    .type(TransactionType.CARD_PAYMENT)
+                    .build();
+
+            return mapToResponse(transactionRepo.save(transaction));
+        }
+
+        @Scheduled(fixedRate = 1800000)
+        @PostConstruct
+        public void updateExchangeRate(){
+            try{
+                ExchangeRate response = client.get()
+                        .uri("https://v6.exchangerate-api.com/v6/" + exrKey + "/latest/USD")
+                        .retrieve()
+                        .bodyToMono(ExchangeRate.class)
+                        .block(Duration.ofSeconds(10));
+                if(response!=null && response.getConversionRate()!=null){
+                    this.rates.putAll(response.getConversionRate());
+                }
+            } catch (Exception e){
+                throw new UpdateCurrencyException("Could not update the currency");
+            }
+        }
+
+        public BigDecimal getRate(String currency){
+            return rates.getOrDefault(currency.toUpperCase(), BigDecimal.valueOf(1));
+        }
+
+        private BigDecimal convert(BigDecimal amount, String fromCurrency, String toCurrency){
+            if(fromCurrency.equals(toCurrency))
+                return amount;
+            BigDecimal rateFrom = getRate(fromCurrency);
+            BigDecimal rateTo = getRate(toCurrency);
+
+            return amount.divide(rateFrom, 10, RoundingMode.HALF_UP)
+                    .multiply(rateTo)
+                    .setScale(2, RoundingMode.HALF_UP);
         }
     }

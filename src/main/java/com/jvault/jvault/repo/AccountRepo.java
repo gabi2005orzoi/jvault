@@ -11,4 +11,6 @@ public interface AccountRepo extends JpaRepository<Account, Long> {
     List<Account> findAllByUser(User user);
 
     Optional<Account> findByIban(String iban);
+
+    Optional<Account> findByUser_Email(String userEmail);
 }

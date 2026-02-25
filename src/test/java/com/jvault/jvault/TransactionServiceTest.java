@@ -209,7 +209,7 @@ class TransactionServiceTest {
         assertEquals(TransactionStatus.SUCCESS, result.getStatus());
         assertEquals(TransactionType.WITHDRAWAL, result.getType());
         assertEquals("RO01VAULT001", result.getSourceAccountIban());
-        assertNull(result.getDestinationAccountIban()); // Aici verificăm fix-ul pentru NPE
+        assertNull(result.getDestinationAccountIban());
 
         assertEquals(new BigDecimal("900.00"), account1.getBalance());
     }
