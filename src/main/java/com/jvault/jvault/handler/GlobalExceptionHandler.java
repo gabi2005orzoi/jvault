@@ -4,6 +4,7 @@ import com.jvault.jvault.utils.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -164,6 +165,18 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
+                .body(error);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException exp){
+        ErrorResponse error = new ErrorResponse(
+                exp.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value()
+        );
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
                 .body(error);
     }
 }

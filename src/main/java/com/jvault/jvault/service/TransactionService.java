@@ -42,9 +42,6 @@
 
         @Value("${application.security.exchange_rate.key}")
         private String exrKey;
-        private final WebClient client = WebClient.builder()
-                .baseUrl("https://v6.exchangerate-api.com/v6/" + exrKey + "/latest/USD")
-                .build();
         private final Map<String, BigDecimal> rates = new ConcurrentHashMap<>();
 
         private TransactionResponse mapToResponse(Transaction transaction){
@@ -235,6 +232,9 @@
         @Scheduled(fixedRate = 1800000)
         @PostConstruct
         public void updateExchangeRate(){
+            final WebClient client = WebClient.builder()
+                    .baseUrl("https://v6.exchangerate-api.com/v6/" + exrKey + "/latest/USD")
+                    .build();
             try{
                 ExchangeRate response = client.get()
                         .uri("https://v6.exchangerate-api.com/v6/" + exrKey + "/latest/USD")

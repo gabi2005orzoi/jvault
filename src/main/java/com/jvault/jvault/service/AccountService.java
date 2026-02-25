@@ -58,12 +58,13 @@ public class AccountService {
     }
 
     private String generateUniqueIban(){
-
-        String accountId = generateRandomDigits();
-
-        String checkDigits = calculateCheckDigits(accountId);
-
-        return COUNTRY_CODE + checkDigits + BANK_CODE + accountId;
+        while (true) {
+            String accountId = generateRandomDigits();
+            String checkDigits = calculateCheckDigits(accountId);
+            String iban = COUNTRY_CODE + checkDigits + BANK_CODE + accountId;
+            if(!accountRepo.existsAccountByIban(iban))
+                return iban;
+        }
     }
 
     private String calculateCheckDigits(String accountId) {

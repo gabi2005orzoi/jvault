@@ -13,4 +13,6 @@ public interface AccountRepo extends JpaRepository<Account, Long> {
     Optional<Account> findByIban(String iban);
 
     Optional<Account> findByUser_Email(String userEmail);
+
+    boolean existsAccountByIban(String iban);
 }

@@ -3,12 +3,15 @@ package com.jvault.jvault.service;
 import com.jvault.jvault.dto.CardResponse;
 import com.jvault.jvault.model.Account;
 import com.jvault.jvault.model.Card;
+import com.jvault.jvault.model.User;
 import com.jvault.jvault.model.emus.Role;
 import com.jvault.jvault.repo.AccountRepo;
 import com.jvault.jvault.repo.CardRepo;
+import com.jvault.jvault.repo.UserRepo;
 import com.jvault.jvault.utils.exception.AccountNotFoundException;
 import com.jvault.jvault.utils.exception.CardException;
 import com.jvault.jvault.utils.exception.NotYourAccountException;
+import com.jvault.jvault.utils.exception.UserNotFound;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ public class CardService {
 
     private final CardRepo cardRepo;
     private final AccountRepo accountRepo;
+    private final UserRepo userRepo;
 
     @Transactional
     public CardResponse createCard(String iban, String email){
@@ -96,8 +100,9 @@ public class CardService {
     @Transactional
     public void changeActivityStatus(String cardNumber, String userWhoRequest, boolean activity){
         Card card = cardRepo.findByCardNumber(cardNumber).orElseThrow(() -> new CardException("This card doesn't exist"));
-        Account op = accountRepo.findByUser_Email(userWhoRequest).orElseThrow(() -> new AccountNotFoundException("This account is not in the database"));
-        if(!card.getAccount().getUser().getEmail().equals(userWhoRequest) && !op.getUser().getRole().equals(Role.ADMIN))
+        User currentUser = userRepo.findByEmail(userWhoRequest)
+                .orElseThrow(UserNotFound::new);
+        if (!card.getAccount().getUser().getEmail().equals(userWhoRequest) && !currentUser.getRole().equals(Role.ADMIN))
             throw new NotYourAccountException("You don't have the permission to modify the status of this card");
         card.setActive(activity);
     }
