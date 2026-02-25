@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         // Public - captcha mai trebuie adaugat la register si la login
-                        .requestMatchers("/api/user/register", "/api/user/login", "/api/user/refresh-token").permitAll()
+                        .requestMatchers("/api/user/register", "/api/user/login", "/api/user/refresh-token", "/ws/**").permitAll()
                         // User Management
                         .requestMatchers("/api/user/change-password", "/api/user/id/**", "/api/user/email/**", "/api/user/delete-account").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/user").hasAuthority("ADMIN")

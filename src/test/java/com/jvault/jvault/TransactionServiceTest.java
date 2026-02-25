@@ -11,6 +11,7 @@ import com.jvault.jvault.model.emus.Currency;
 import com.jvault.jvault.model.emus.TransactionStatus;
 import com.jvault.jvault.model.emus.TransactionType;
 import com.jvault.jvault.repo.AccountRepo;
+import com.jvault.jvault.repo.CardRepo;
 import com.jvault.jvault.repo.TransactionRepo;
 import com.jvault.jvault.service.AuditTransactionService;
 import com.jvault.jvault.service.TransactionService;
@@ -27,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -46,6 +48,8 @@ class TransactionServiceTest {
     private AccountRepo accountRepo;
     @Mock
     private AuditTransactionService auditTransactionService;
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
 
     @InjectMocks
     private TransactionService transactionService;

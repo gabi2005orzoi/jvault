@@ -18,6 +18,7 @@
     import org.springframework.data.domain.PageRequest;
     import org.springframework.data.domain.Pageable;
     import org.springframework.data.domain.Sort;
+    import org.springframework.messaging.simp.SimpMessagingTemplate;
     import org.springframework.scheduling.annotation.Scheduled;
     import org.springframework.stereotype.Service;
     import org.springframework.web.reactive.function.client.WebClient;
@@ -37,6 +38,7 @@
         private final AccountRepo accountRepo;
         private final AuditTransactionService auditTransactionService;
         private final CardRepo cardRepo;
+        private final SimpMessagingTemplate messagingTemplate;
 
         @Value("${application.security.exchange_rate.key}")
         private String exrKey;
@@ -92,7 +94,12 @@
                     .description(request.getDescription())
                     .build();
 
-            return mapToResponse(transactionRepo.save(transaction));
+            TransactionResponse response = mapToResponse(transactionRepo.save(transaction));
+
+            String destinationUserEmail = destination.getUser().getEmail();
+            messagingTemplate.convertAndSend("/topic/notifications/" + destinationUserEmail, response);
+            messagingTemplate.convertAndSend("/topic/notifications/" + userEmail, response);
+            return response;
         }
 
         private void validateTransfer(Account source, Account destination, TransferRequest request, String userEmail){
@@ -134,7 +141,11 @@
                     .status(TransactionStatus.SUCCESS)
                     .type(TransactionType.DEPOSIT)
                     .build();
-            return mapToResponse(transactionRepo.save(transaction));
+
+            TransactionResponse response = mapToResponse(transactionRepo.save(transaction));
+            String destinationUserEmail = targetAccount.getUser().getEmail();
+            messagingTemplate.convertAndSend("/topic/notifications/" + destinationUserEmail, response);
+            return response;
         }
 
         @Transactional
@@ -161,7 +172,9 @@
                     .type(TransactionType.WITHDRAWAL)
                     .build();
 
-            return mapToResponse(transactionRepo.save(transaction));
+            TransactionResponse response = mapToResponse(transactionRepo.save(transaction));
+            messagingTemplate.convertAndSend("/topic/notifications/" + userEmail, response);
+            return response;
         }
 
         @Transactional
@@ -192,8 +205,10 @@
             }
 
             accountRepo.save(card.getAccount());
-            if(destination!=null)
+
+            if(destination!=null){
                 accountRepo.save(destination);
+            }
 
             Transaction transaction = Transaction.builder()
                     .sourceAccount(card.getAccount())
@@ -206,7 +221,15 @@
                     .type(TransactionType.CARD_PAYMENT)
                     .build();
 
-            return mapToResponse(transactionRepo.save(transaction));
+            TransactionResponse response = mapToResponse(transactionRepo.save(transaction));
+            String sourceUserEmail = card.getAccount().getUser().getEmail();
+            messagingTemplate.convertAndSend("/topic/notifications/" + sourceUserEmail, response);
+
+            if(destination!=null) {
+                String destinationUserEmail = destination.getUser().getEmail();
+                messagingTemplate.convertAndSend("/topic/notifications/" + destinationUserEmail, response);
+            }
+            return response;
         }
 
         @Scheduled(fixedRate = 1800000)
