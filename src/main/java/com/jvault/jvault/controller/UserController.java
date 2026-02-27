@@ -8,9 +8,12 @@ import com.jvault.jvault.service.RefreshTokenService;
 import com.jvault.jvault.service.UserService;
 import com.jvault.jvault.utils.IpUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -42,7 +45,8 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> authenticateAndGetToken(
             @RequestBody AuthRequest authRequest,
-            HttpServletRequest request
+            HttpServletRequest request,
+            HttpServletResponse response
     ){
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
@@ -50,6 +54,15 @@ public class UserController {
         if(authentication.isAuthenticated()){
             String accessToken = jwtService.generateToken(authRequest.getUsername());
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(authRequest.getUsername());
+
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken.getToken())
+                    .httpOnly(true)
+                    .secure(false)
+                    .maxAge(7*24*60*60)
+                    .sameSite("Strict")
+                    .build();
+
+            response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
 
             String ipAddress = IpUtils.getIpClient(request);
             auditLogService.logAction(
@@ -60,7 +73,6 @@ public class UserController {
             );
             return ResponseEntity.ok(JwtResponse.builder()
                     .accessToken(accessToken)
-                    .refreshToken(refreshToken.getToken())
                     .build()
             );
         } else {
@@ -68,18 +80,31 @@ public class UserController {
         }
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletResponse response){
+        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken","")
+                .httpOnly(true)
+                .secure(false)
+                .path("api/user/refresh-token")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+        return ResponseEntity.ok("Logged out successfully!");
+    }
+
     @PostMapping("/refresh-token")
     public ResponseEntity<JwtResponse> refreshToken(
-            @RequestBody RefreshTokenRequest request
+            @CookieValue(name = "refreshToken") String refreshToken
     ){
-        return refreshTokenService.findByToken(request.getToken())
+        return refreshTokenService.findByToken(refreshToken)
                 .map(refreshTokenService::verifyExpiration)
                 .map(RefreshToken::getUser)
                 .map(user -> {
                     String accessToken = jwtService.generateToken(user.getEmail());
                     return ResponseEntity.ok(JwtResponse.builder()
                             .accessToken(accessToken)
-                            .refreshToken(request.getToken())
                             .build());
                 }).orElseThrow(() -> new RuntimeException("Refresh token is not in the database"));
     }
